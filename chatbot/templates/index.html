@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Companion Chat</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom Gradient Styles -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .chat-container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(to right, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .chat-body {
+            height: 450px;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+        }
+
+        .message-user {
+            align-self: flex-end;
+            background-color: #007bff;
+            color: white;
+            border-radius: 15px 15px 0 15px;
+            align-self: flex-end;
+        }
+
+        .message-ai {
+            background-color: #f1f0f0;
+            color: #333;
+            border-radius: 15px 15px 15px 0;
+            align-self: flex-start;
+        }
+
+        .chat-input {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .typing-indicator {
+            display: none;
+            color: #6c757d;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-robot me-2"></i>AI Companion Chat
+                </h4>
+            </div>
+            
+            <div class="chat-body" id="chat-messages">
+                <div class="d-flex flex-column">
+                    <div class="message message-ai align-self-start p-3 mb-2">
+                        Hello! I'm your AI assistant. How can I help you today?
+                    </div>
+                </div>
+            </div>
+            
+            <div class="typing-indicator text-center" id="typing-indicator">
+                AI is typing...
+            </div>
+            
+            <div class="chat-input">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="user-message" 
+                        class="form-control" 
+                        placeholder="Type your message..."
+                        aria-describedby="send-button"
+                    >
+                    <button 
+                        class="btn btn-primary" 
+                        type="button" 
+                        id="send-button"
+                    >
+                        <i class="bi bi-send"></i>
+                    </button>
+                    <button 
+                        class="btn btn-danger ms-2" 
+                        type="button" 
+                        id="reset-button"
+                    >
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+
+    <script>
+    $(document).ready(function() {
+        function addMessage(sender, message) {
+            const messageClass = sender === 'user' 
+                ? 'message-user align-self-end' 
+                : 'message-ai align-self-start';
+            
+            $('#chat-messages').append(`
+                <div class="message ${messageClass} p-3">
+                    ${message}
+                </div>
+            `);
+            
+            // Auto-scroll to bottom
+            const chatBody = $('.chat-body');
+            chatBody.scrollTop(chatBody[0].scrollHeight);
+        }
+
+        $('#send-button, #user-message').on('click keypress', function(e) {
+            // Trigger on button click or Enter key
+            if (e.type === 'click' || (e.type === 'keypress' && e.which === 13)) {
+                const userMessage = $('#user-message').val().trim();
+                
+                if (!userMessage) return;
+
+                // Show user message
+                addMessage('user', userMessage);
+                
+                // Clear input
+                $('#user-message').val('');
+                
+                // Show typing indicator
+                $('#typing-indicator').show();
+
+                // AJAX request
+                $.ajax({
+                    url: '/chat',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({message: userMessage}),
+                    success: function(data) {
+                        // Hide typing indicator
+                        $('#typing-indicator').hide();
+                        
+                        // Add AI response
+                        addMessage('ai', data.response);
+                    },
+                    error: function() {
+                        // Hide typing indicator
+                        $('#typing-indicator').hide();
+                        
+                        // Error message
+                        addMessage('ai', 'Sorry, something went wrong. Please try again.');
+                    }
+                });
+            }
+        });
+
+        // Reset conversation
+        $('#reset-button').click(function() {
+            $.ajax({
+                url: '/reset',
+                type: 'POST',
+                success: function() {
+                    // Clear chat messages
+                    $('#chat-messages').html(`
+                        <div class="message message-ai align-self-start p-3 mb-2">
+                            Conversation reset. How can I help you today?
+                        </div>
+                    `);
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>
