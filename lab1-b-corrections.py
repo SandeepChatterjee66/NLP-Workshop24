@@ -23,7 +23,6 @@ def load_word2vec_model():
     print("Word2Vec model loaded successfully!")
     return model
 
-
 # Load Word2Vec model
 word2vec_model = load_word2vec_model()
 
@@ -50,7 +49,7 @@ def text_to_embedding(text, model):
     return np.mean(embeddings, axis=0) if embeddings else np.zeros(model.vector_size)
 
 
-
+dataset = load_dataset("imdb", split='train')
 
 # Prepare features (text -> word embeddings) and labels (positive/negative sentiment)
 X = np.array([text_to_embedding(text, word2vec_model) for text in dataset['text']])
